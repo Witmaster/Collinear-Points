@@ -66,8 +66,7 @@ public class BruteCollinearPoints
    public int numberOfSegments() { return this.numberOfSegments; }        // the number of line segments
    public LineSegment[] segments() // the line segments
    { 
-       final LineSegment[] result = lineSegments;
-       return result; 
+       return java.util.Arrays.copyOf(lineSegments, lineSegments.length); 
    }
        
 }

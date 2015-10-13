@@ -1,10 +1,23 @@
-import edu.princeton.cs.algs4.StdIn;
-import edu.princeton.cs.algs4.StdOut;
-
 public class FastCollinearPoints 
 {
     private int segmentsCount = 0;
     private final LineSegment[] lineSegments;
+    
+    private class Node
+    {
+        public Point first;
+        public Point last;
+        public Node next;
+        
+        public Node(Point first, Point last)
+        {
+            this.first = first;
+            this.last = last;
+        }
+    }
+    
+    Node firstNode = null;
+    
     public FastCollinearPoints(Point[] points) // finds all line segments containing 4 or more points
     {
         if (points == null)
@@ -21,68 +34,75 @@ public class FastCollinearPoints
                     throw (new java.lang.IllegalArgumentException());
             }
         }
-        LineSegment[] tempResult = new LineSegment[points.length];
-        for (int index = 0; index < points.length; index++)
+        Point[] auxArray = java.util.Arrays.copyOf(points, points.length);
+        for (int index = 0; index < points.length; index++) //index of base point to determine angle 
         {
-            int comboCount = 1;
-            int offset = 1;
-            Point[] tempInput = points;
-            java.util.Arrays.sort(tempInput, points[index].slopeOrder());
-            for (int index2 = 1; index2 < tempInput.length; index2++)
-            {
-                if (points[index].compareTo(tempInput[index2]) == 0 && index2 > 2 && index2 < tempInput.length - 1)
-                { 
-                    index2++;
-                    offset = 2;
-                }
-                if (points[index].slopeTo(tempInput[index2]) == points[index].slopeTo(tempInput[index2 - offset]))
-                {
-                    offset = 1;
-                    comboCount++;
+            java.util.Arrays.sort(auxArray, points[index].slopeOrder());
+            int currentStreak = 2;
+            for (int auxIndex = 2; auxIndex < auxArray.length; auxIndex++) //loop through the array of points sorted by slope with base
+            {//find series of equal slopes and add them to resulting array if it's unique
+                if (points[index].slopeTo(auxArray[auxIndex]) == points[index].slopeTo(auxArray[auxIndex - 1]))
+                {//if slopes of two points are equal - they're lying on one line
+                    currentStreak++;
                 }
                 else
                 {
-                    if (comboCount > 2)
+                    if (currentStreak > 3)
                     {
-                        Point start = points[index];
-                        Point end = points[index];
-                        for (int index3 = 1; index3 <= comboCount; index3++)
+                        Point first = points[index];
+                        Point last = points[index];
+                        for (int subIndex = 1; subIndex < currentStreak; subIndex++)
                         {
-                            if (points[index].compareTo(tempInput[index2 - index3]) == 0)
+                            if (first.compareTo(auxArray[auxIndex - subIndex]) < 0)
+                                first = auxArray[auxIndex - subIndex];
+                            if (last.compareTo(auxArray[auxIndex - subIndex]) > 0)
+                                last = auxArray[auxIndex - subIndex];
+                        }
+                        if (firstNode == null)
+                        {
+                            segmentsCount++;
+                            firstNode = new Node(first, last);
+                        }
+                        else
+                        {
+                            boolean isUnique = true;
+                            Node thisNode = firstNode;
+                            while (thisNode.next != null)
                             {
-                                index3++;
-                                comboCount++;
+                                if (thisNode.first == first && thisNode.last == last)
+                                {
+                                    isUnique = false;
+                                    break;
+                                }
+                                thisNode = thisNode.next;
                             }
-                            if (start.compareTo(tempInput[index2 - index3]) > 0)
-                                start = tempInput[index2 - index3];
-                            if (end.compareTo(tempInput[index2 - index3]) < 0)
-                                end = tempInput[index2 - index3];
+                            if (isUnique && thisNode.next == null)
+                            {
+                                if (thisNode.first != first || thisNode.last != last)
+                                {
+                                    segmentsCount++;
+                                    thisNode.next = new Node(first, last);
+                                }
+                            }
                         }
-                        boolean isDuplicate = false;
-                        for (int duplicatesIndex = 0; duplicatesIndex <= segmentsCount; duplicatesIndex++)
-                        {
-                           // start.compareTo();
-                        }
-                        if (!isDuplicate)
-                            tempResult[segmentsCount++] = new LineSegment(start, end);
+                            
                     }
-                    comboCount = 1;
+                    currentStreak = 2;
                 }
             }
         }
+        Node thisNode = firstNode;
         lineSegments = new LineSegment[segmentsCount];
-        for (int index = 0; index < segmentsCount; index++)
-            lineSegments[index] = tempResult[index];
+        for (int index = 0; index < lineSegments.length; index++)
+        {
+            lineSegments[index] = new LineSegment(thisNode.first, thisNode.last);
+            thisNode = thisNode.next;
+        }
     }
 
     public int numberOfSegments() { return segmentsCount; }        // the number of line segments
     public LineSegment[] segments()               // the line segments
     {
-        final LineSegment[] result = lineSegments;
-        return result;
-    }
-    private  void main(String[] args)
-    {
-        
+        return java.util.Arrays.copyOf(lineSegments, lineSegments.length);
     }
 }
